@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Expense Tracker</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2rem; background: #f5f5f5; }
+        h1 { color: #2d3748; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: #fff; }
+        th, td { padding: 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left; }
+        th { background: #edf2f7; }
+        form { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 2rem; }
+        label { display: flex; flex-direction: column; font-weight: bold; color: #4a5568; }
+        input, select { padding: 0.5rem; border: 1px solid #cbd5f5; border-radius: 4px; }
+        button { padding: 0.75rem 1.5rem; background: #3182ce; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #2b6cb0; }
+        .summary { margin-top: 2rem; }
+        .tag { display: inline-block; background: #bee3f8; color: #2c5282; padding: 0.25rem 0.5rem; border-radius: 3px; margin-right: 0.5rem; }
+    </style>
+</head>
+<body>
+<h1>Expense Tracker</h1>
+<p>Minimal single-page app backed by the Expense Tracker API.</p>
+<div class="summary">
+    <h2>This Month</h2>
+    <p id="monthly-total">Loading...</p>
+    <div id="category-summary"></div>
+</div>
+<table id="expenses-table">
+    <thead>
+    <tr>
+        <th>Category</th>
+        <th>Amount</th>
+        <th>Date</th>
+        <th>Note</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+<form id="expense-form">
+    <label>Category
+        <input name="category" required maxlength="40">
+    </label>
+    <label>Amount
+        <input name="amount" type="number" step="0.01" min="0.01" required>
+    </label>
+    <label>Date
+        <input name="date" type="date" required>
+    </label>
+    <label>Note
+        <input name="note" maxlength="120">
+    </label>
+    <button type="submit">Add Expense</button>
+</form>
+<script>
+    const tableBody = document.querySelector('#expenses-table tbody');
+    const monthlyTotalEl = document.getElementById('monthly-total');
+    const categorySummaryEl = document.getElementById('category-summary');
+    const form = document.getElementById('expense-form');
+
+    async function fetchExpenses() {
+        const response = await fetch('/api/expenses');
+        const expenses = await response.json();
+        tableBody.innerHTML = '';
+        expenses.forEach(expense => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${expense.category}</td>
+                <td>$${Number(expense.amount).toFixed(2)}</td>
+                <td>${expense.date}</td>
+                <td>${expense.note ?? ''}</td>
+                <td><button data-id="${expense.id}" class="delete">Delete</button></td>`;
+            tableBody.appendChild(row);
+        });
+    }
+
+    async function fetchSummary() {
+        const today = new Date().toISOString().substring(0, 10);
+        const monthlyResponse = await fetch(`/api/expenses/summary/monthly?date=${today}`);
+        const total = await monthlyResponse.json();
+        monthlyTotalEl.textContent = `Total spent: $${Number(total).toFixed(2)}`;
+
+        const categoryResponse = await fetch('/api/expenses/summary/categories');
+        const categoryTotals = await categoryResponse.json();
+        categorySummaryEl.innerHTML = '';
+        Object.entries(categoryTotals).forEach(([category, amount]) => {
+            const span = document.createElement('span');
+            span.className = 'tag';
+            span.textContent = `${category}: $${Number(amount).toFixed(2)}`;
+            categorySummaryEl.appendChild(span);
+        });
+    }
+
+    tableBody.addEventListener('click', async (event) => {
+        if (event.target.matches('button.delete')) {
+            const id = event.target.getAttribute('data-id');
+            await fetch(`/api/expenses/${id}`, { method: 'DELETE' });
+            await refresh();
+        }
+    });
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const formData = new FormData(form);
+        const payload = Object.fromEntries(formData.entries());
+        await fetch('/api/expenses', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        form.reset();
+        await refresh();
+    });
+
+    async function refresh() {
+        await fetchExpenses();
+        await fetchSummary();
+    }
+
+    refresh();
+</script>
+</body>
+</html>
