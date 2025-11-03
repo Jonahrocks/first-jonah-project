@@ -1,5 +1,25 @@
-target/*
-.classpath
-.settings
-.project
+# Maven
+/target/
+*/target/
+!.mvn/wrapper/maven-wrapper.jar
 
+# IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node (for frontend assets)
+node_modules/
+**/node_modules/
+
+# Logs
+*.log
+
+# Coverage
+**/jacoco.exec

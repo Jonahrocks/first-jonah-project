@@ -1,0 +1,10 @@
+region,product,units,unit_price
+EMEA,Analytics Pro,5,199.99
+AMER,Analytics Pro,3,199.99
+APAC,Analytics Pro,4,199.99
+EMEA,Data Lake,10,149.0
+AMER,Data Lake,7,149.0
+APAC,Data Lake,6,149.0
+EMEA,Insight Plus,2,299.5
+AMER,Insight Plus,3,299.5
+APAC,Insight Plus,4,299.5
